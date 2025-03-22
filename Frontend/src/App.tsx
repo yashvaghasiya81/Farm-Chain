@@ -31,6 +31,8 @@ import Settings from "@/pages/farmer/Settings";
 import Analytics from "@/pages/farmer/Analytics";
 import DeliveryPage from "@/pages/farmer/Delivery";
 import AddProduct from "@/pages/farmer/AddProduct";
+import ConsumerProfile from "@/pages/consumer/Profile";
+import ConsumerSettings from "@/pages/consumer/Settings";
 
 // Layout components
 import MainLayout from "@/components/layouts/MainLayout";
@@ -74,6 +76,8 @@ const App = () => (
                 <Route element={<ProtectedRoute userType="consumer" />}>
                   <Route element={<DashboardLayout userType="consumer" />}>
                     <Route path="/consumer/dashboard" element={<ConsumerDashboard />} />
+                    <Route path="/consumer/dashboard/profile" element={<ConsumerProfile />} />
+                    <Route path="/consumer/dashboard/settings" element={<ConsumerSettings />} />
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/orders/:id" element={<OrderTracking />} />
                     <Route path="/chat/:id?" element={<Chat />} />
