@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,7 +99,6 @@ const FarmerDashboard = () => {
         <TabsContent value="inventory" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Your Products</h2>
-            <Button variant="default">Add New Product</Button>
           </div>
           
           <div className="rounded-md border">

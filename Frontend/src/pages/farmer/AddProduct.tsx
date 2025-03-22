@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const AddProduct = () => {
   const { toast } = useToast();
@@ -132,32 +133,21 @@ const AddProduct = () => {
 
             <div className="space-y-2">
               <Label>Sale Type</Label>
-              <div className="flex space-x-4">
+              <RadioGroup
+                defaultValue="fixed"
+                value={formData.saleType}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, saleType: value }))}
+                className="flex space-x-4"
+              >
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="fixed"
-                    name="saleType"
-                    value="fixed"
-                    checked={formData.saleType === 'fixed'}
-                    onChange={(e) => setFormData(prev => ({ ...prev, saleType: e.target.value }))}
-                    className="h-4 w-4 text-farm-green-600"
-                  />
+                  <RadioGroupItem value="fixed" id="fixed" />
                   <Label htmlFor="fixed">Fixed Price</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="auction"
-                    name="saleType"
-                    value="auction"
-                    checked={formData.saleType === 'auction'}
-                    onChange={(e) => setFormData(prev => ({ ...prev, saleType: e.target.value }))}
-                    className="h-4 w-4 text-farm-green-600"
-                  />
+                  <RadioGroupItem value="auction" id="auction" />
                   <Label htmlFor="auction">Auction</Label>
                 </div>
-              </div>
+              </RadioGroup>
             </div>
 
             {formData.saleType === 'fixed' ? (
