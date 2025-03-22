@@ -52,7 +52,7 @@ const Home = () => {
           <p className="text-xl text-gray-600 text-center max-w-3xl mx-auto mb-16 animate-fade-in-up">Experience the future of farm-to-table with our innovative blockchain platform</p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transform transition-all duration-500 hover:-translate-y-4 hover:shadow-xl animate-fade-in-up hover:animate-float" style={{ animationDelay: '100ms' }}>
+            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transition-all duration-300 hover:shadow-lg hover:border-gray-200" style={{ animationDelay: '100ms' }}>
               <div className="h-20 w-20 rounded-full mx-auto mb-6 flex items-center justify-center group relative animated-border">
                 <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-green-200 rounded-full animate-pulse-subtle"></div>
                 <Leaf className="h-10 w-10 text-farm-green-600 relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-12" />
@@ -66,7 +66,7 @@ const Home = () => {
               </Link>
             </div>
             
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transform transition-all duration-500 hover:-translate-y-4 hover:shadow-xl animate-fade-in-up hover:animate-float" style={{ animationDelay: '200ms' }}>
+            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transition-all duration-300 hover:shadow-lg hover:border-gray-200" style={{ animationDelay: '200ms' }}>
               <div className="h-20 w-20 rounded-full mx-auto mb-6 flex items-center justify-center group relative animated-border">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full animate-pulse-subtle"></div>
                 <ShieldCheck className="h-10 w-10 text-fresh-blue-600 relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:animate-pulse-subtle" />
@@ -80,7 +80,7 @@ const Home = () => {
               </Link>
             </div>
             
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transform transition-all duration-500 hover:-translate-y-4 hover:shadow-xl animate-fade-in-up hover:animate-float" style={{ animationDelay: '300ms' }}>
+            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transition-all duration-300 hover:shadow-lg hover:border-gray-200" style={{ animationDelay: '300ms' }}>
               <div className="h-20 w-20 rounded-full mx-auto mb-6 flex items-center justify-center group relative animated-border">
                 <div className="absolute inset-0 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-full animate-pulse-subtle"></div>
                 <Truck className="h-10 w-10 text-harvest-gold-600 relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:animate-bounce-subtle" />
@@ -94,7 +94,7 @@ const Home = () => {
               </Link>
             </div>
             
-            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transform transition-all duration-500 hover:-translate-y-4 hover:shadow-xl animate-fade-in-up hover:animate-float" style={{ animationDelay: '400ms' }}>
+            <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 text-center transition-all duration-300 hover:shadow-lg hover:border-gray-200" style={{ animationDelay: '400ms' }}>
               <div className="h-20 w-20 rounded-full mx-auto mb-6 flex items-center justify-center group relative animated-border">
                 <div className="absolute inset-0 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full animate-pulse-subtle"></div>
                 <Star className="h-10 w-10 text-soil-brown-600 relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:animate-rotate-360" />
