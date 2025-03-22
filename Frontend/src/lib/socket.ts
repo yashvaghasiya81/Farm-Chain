@@ -216,19 +216,36 @@ export function placeBid(auctionId: string, amount: number, userId?: string): Pr
     const socketInstance = getSocket();
     if (DEBUG_MODE) console.log(`[Socket] Placing bid of $${amount} on auction ${auctionId} by user ${bidUserId}`);
     
-    const bidData = {
-      auctionId,
-      amount,
-      userId: bidUserId
-    };
-    
-    socketInstance.emit('auction:bid', bidData, (response: any) => {
+    // First check if the auction is still active
+    socketInstance.emit('auction:status', { auctionId }, (response: any) => {
       if (response && response.success) {
-        if (DEBUG_MODE) console.log(`[Socket] Bid placed successfully on auction ${auctionId}: $${amount}`);
-        resolve(response);
+        if (response.isEnded) {
+          const error = 'This auction has ended and no more bids can be placed';
+          console.error(`[Socket] ${error}`);
+          reject(new Error(error));
+          return;
+        }
+        
+        // Auction is active, proceed with the bid
+        const bidData = {
+          auctionId,
+          amount,
+          userId: bidUserId
+        };
+        
+        socketInstance.emit('auction:bid', bidData, (bidResponse: any) => {
+          if (bidResponse && bidResponse.success) {
+            if (DEBUG_MODE) console.log(`[Socket] Bid placed successfully on auction ${auctionId}: $${amount}`);
+            resolve(bidResponse);
+          } else {
+            const error = bidResponse?.error || 'Failed to place bid';
+            console.error(`[Socket] Error placing bid: ${error}`);
+            reject(new Error(error));
+          }
+        });
       } else {
-        const error = response?.error || 'Failed to place bid';
-        console.error(`[Socket] Error placing bid: ${error}`);
+        const error = response?.error || 'Failed to check auction status';
+        console.error(`[Socket] ${error}`);
         reject(new Error(error));
       }
     });

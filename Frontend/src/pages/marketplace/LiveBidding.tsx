@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { AlertCircle, ArrowLeft, Clock, Gavel, Users, UserCheck, Award, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowLeft, Clock, Gavel, Users, UserCheck, Award, RefreshCw, Lock, AlertTriangle } from "lucide-react";
 import { Product } from "@/services/productService";
 import { getSocket, getSocketUrl, createSocket, checkConnection } from "@/lib/socket";
 
@@ -42,6 +42,7 @@ const LiveBidding = () => {
   const [socketConnected, setSocketConnected] = useState(false);
   const [socketError, setSocketError] = useState<string | null>(null);
   const [reconnecting, setReconnecting] = useState(false);
+  const [isAuctionEnded, setIsAuctionEnded] = useState<boolean>(false);
   
   // Use refs to prevent stale closures and track component mount state
   const isMounted = useRef(true);
@@ -368,12 +369,16 @@ const LiveBidding = () => {
         
         if (difference <= 0) {
           setTimeLeft("Auction ended");
+          setIsAuctionEnded(true);
           if (timerRef.current) {
             clearInterval(timerRef.current);
             timerRef.current = null;
           }
           return;
         }
+        
+        // If auction is running, make sure isAuctionEnded is false
+        setIsAuctionEnded(false);
         
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
         const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -411,6 +416,17 @@ const LiveBidding = () => {
       }
     };
   }, [product?.id]); // Only depend on product.id
+  
+  // Check if auction has ended on component mount
+  useEffect(() => {
+    if (product?.endBidTime) {
+      const endTime = new Date(product.endBidTime).getTime();
+      const now = new Date().getTime();
+      if (now >= endTime) {
+        setIsAuctionEnded(true);
+      }
+    }
+  }, [product?.endBidTime]);
   
   const handlePlaceBid = async () => {
     if (!product || !bidAmount || !isAuthenticated || !user) return;
@@ -552,6 +568,28 @@ const LiveBidding = () => {
         <ArrowLeft className="mr-2 h-4 w-4" /> Back to Marketplace
       </Button>
       
+      {/* Auction ended notice */}
+      {isAuctionEnded && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-md">
+          <div className="flex items-center">
+            <AlertTriangle className="h-6 w-6 text-amber-600 mr-3" />
+            <div>
+              <h3 className="font-semibold text-amber-800 text-lg">Auction has ended</h3>
+              <p className="text-amber-700">
+                This auction has closed and no more bids can be placed.
+                {product.bidder && (
+                  <span> The winning bid was ${(product.currentBid || 0).toFixed(2)} by {
+                    typeof product.bidder === 'object' && product.bidder !== null 
+                      ? (product.bidder.name || "Anonymous") 
+                      : (typeof product.bidder === 'string' ? product.bidder : "Anonymous")
+                  }.</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Socket connection status */}
       {socketError && (
         <div className="mb-4 p-2 bg-yellow-100 border border-yellow-400 rounded flex items-center justify-between">
@@ -656,6 +694,7 @@ const LiveBidding = () => {
                     step="0.5"
                     placeholder="Enter bid amount"
                     className="text-lg"
+                    disabled={isAuctionEnded}
                   />
                   <p className="text-sm text-gray-500 mt-2">
                     Minimum bid: ${((product.currentBid || product.startingBid || 0) + 0.5).toFixed(2)}
@@ -667,7 +706,8 @@ const LiveBidding = () => {
                     !isAuthenticated || 
                     !bidAmount || 
                     bidAmount <= (product.currentBid || product.startingBid || 0) ||
-                    isPlacingBid
+                    isPlacingBid ||
+                    isAuctionEnded
                   }
                   className="bg-harvest-gold-600 hover:bg-harvest-gold-700 h-12 md:w-1/3"
                 >
@@ -675,6 +715,11 @@ const LiveBidding = () => {
                     <div className="flex items-center">
                       <span className="animate-spin h-4 w-4 border-b-2 border-white mr-2"></span>
                       Bidding...
+                    </div>
+                  ) : isAuctionEnded ? (
+                    <div className="flex items-center">
+                      <Lock className="h-4 w-4 mr-2" />
+                      Auction Ended
                     </div>
                   ) : (
                     <div className="flex items-center">
@@ -685,7 +730,18 @@ const LiveBidding = () => {
                 </Button>
               </div>
               
-              {!isAuthenticated && (
+              {isAuctionEnded && (
+                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-md p-3 flex items-start">
+                  <AlertTriangle className="h-5 w-5 text-amber-500 mt-0.5 mr-2" />
+                  <div>
+                    <p className="text-sm text-amber-800">
+                      This auction has ended and no more bids can be placed.
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {!isAuthenticated && !isAuctionEnded && (
                 <div className="mt-4 bg-amber-50 border border-amber-200 rounded-md p-3 flex items-start">
                   <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 mr-2" />
                   <div>
