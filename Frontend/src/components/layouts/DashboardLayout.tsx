@@ -1,6 +1,6 @@
-
 import React from "react";
 import { Outlet } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   SidebarProvider,
   Sidebar,
@@ -41,8 +41,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType }) => {
       { title: "My Products", url: "/farmer/dashboard?tab=products", icon: ShoppingBag },
       { title: "Orders", url: "/farmer/dashboard?tab=orders", icon: Package },
       { title: "Add Product", url: "/farmer/dashboard?tab=add-product", icon: Plus },
-      { title: "Delivery", url: "/farmer/dashboard?tab=delivery", icon: Truck },
-      { title: "Analytics", url: "/farmer/dashboard?tab=analytics", icon: LineChart },
+      { title: "Delivery", url: "/farmer/dashboard/delivery", icon: Truck },
+      { title: "Analytics", url: "/farmer/dashboard/analytics", icon: LineChart },
       { title: "Messages", url: "/farmer/chat", icon: MessageSquare },
     ];
 
@@ -71,13 +71,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType }) => {
             <SidebarGroup>
               <SidebarGroupLabel>Menu</SidebarGroupLabel>
               <SidebarMenu>
-                {menuItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
+                {menuItems.map((item, index) => (
+                  <SidebarMenuItem key={index}>
                     <SidebarMenuButton asChild>
-                      <a href={item.url} className="flex items-center space-x-3">
+                      <Link to={item.url} className="flex items-center space-x-3">
                         <item.icon className="h-5 w-5" />
                         <span>{item.title}</span>
-                      </a>
+                      </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -89,18 +89,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType }) => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <a href={`/${userType}/dashboard?tab=profile`} className="flex items-center space-x-3">
+                    <Link to={`/${userType}/dashboard/profile`} className="flex items-center space-x-3">
                       <User className="h-5 w-5" />
                       <span>Profile</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <a href={`/${userType}/dashboard?tab=settings`} className="flex items-center space-x-3">
+                    <Link to={`/${userType}/dashboard/settings`} className="flex items-center space-x-3">
                       <Settings className="h-5 w-5" />
                       <span>Settings</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>

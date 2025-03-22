@@ -1,5 +1,8 @@
 import React from 'react';
 import { Leaf, Users, Truck, Shield } from 'lucide-react';
+import milanBaladaniya from '@/assets/images/milanBaladaniya.jpg';
+import meetVaghasiya from '@/assets/images/meetVaghasiya.jpeg';
+import yashVaghasiya from '@/assets/images/yashVaghasiya.jpeg';
 
 const About = () => {
   return (
@@ -69,24 +72,36 @@ const About = () => {
           <h2 className="text-2xl font-semibold text-gray-900 mb-6">Our Team</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="w-32 h-32 bg-farm-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl text-farm-green-600">MB</span>
+              <div className="w-32 h-32 rounded-full mx-auto mb-4 overflow-hidden border-4 border-farm-green-100">
+                <img 
+                  src={milanBaladaniya} 
+                  alt="Milan Baladaniya" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h3 className="text-lg font-semibold text-gray-900">Milan Baladaniya</h3>
               <p className="text-gray-600">CEO & Founder</p>
               <p className="text-sm text-gray-500">Project Lead</p>
             </div>
             <div className="text-center">
-              <div className="w-32 h-32 bg-farm-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl text-farm-green-600">MV</span>
+              <div className="w-32 h-32 rounded-full mx-auto mb-4 overflow-hidden border-4 border-farm-green-100">
+                <img 
+                  src={meetVaghasiya} 
+                  alt="Meet Vaghasiya" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h3 className="text-lg font-semibold text-gray-900">Meet Vaghasiya</h3>
               <p className="text-gray-600">CTO</p>
               <p className="text-sm text-gray-500">Tech Lead</p>
             </div>
             <div className="text-center">
-              <div className="w-32 h-32 bg-farm-green-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-2xl text-farm-green-600">YV</span>
+              <div className="w-32 h-32 rounded-full mx-auto mb-4 overflow-hidden border-4 border-farm-green-100">
+                <img 
+                  src={yashVaghasiya} 
+                  alt="Yash Vaghasiya" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <h3 className="text-lg font-semibold text-gray-900">Yash Vaghasiya</h3>
               <p className="text-gray-600">Head of Operations</p>

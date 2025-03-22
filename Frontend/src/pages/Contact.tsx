@@ -60,11 +60,11 @@ const Contact = () => {
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-1">Address</h3>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Address</h3>
                       <p className="text-gray-600">
-                        123 Farm Road<br />
-                        Agricultural District<br />
-                        Green Valley, CA 90210
+                        Manki Complex<br />
+                        Valetva<br />
+                        Anand, Gujarat
                       </p>
                     </div>
                   </div>
@@ -75,8 +75,8 @@ const Contact = () => {
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-1">Phone</h3>
-                      <p className="text-gray-600">+1 (555) 123-4567</p>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Phone</h3>
+                      <p className="text-gray-600">+91 90999 12592</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-4">
