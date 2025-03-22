@@ -16,6 +16,8 @@ import ConsumerDashboard from "@/pages/dashboard/ConsumerDashboard";
 import FarmerDashboard from "@/pages/dashboard/FarmerDashboard";
 import Marketplace from "@/pages/marketplace/Marketplace";
 import ProductDetails from "@/pages/marketplace/ProductDetails";
+import LiveBidding from "@/pages/marketplace/LiveBidding";
+import FarmerLiveBidding from "@/pages/farmer/LiveBidding";
 import Checkout from "@/pages/checkout/Checkout";
 import OrderTracking from "@/pages/orders/OrderTracking";
 import Chat from "@/pages/chat/Chat";
@@ -33,6 +35,9 @@ import DeliveryPage from "@/pages/farmer/Delivery";
 import AddProduct from "@/pages/farmer/AddProduct";
 import ConsumerProfile from "@/pages/consumer/Profile";
 import ConsumerSettings from "@/pages/consumer/Settings";
+import RegisterChoice from "@/pages/auth/RegisterChoice";
+import FarmerRegister from "@/pages/auth/FarmerRegister";
+import ConsumerRegister from "@/pages/auth/ConsumerRegister";
 
 // Layout components
 import MainLayout from "@/components/layouts/MainLayout";
@@ -57,6 +62,7 @@ const App = () => (
                   <Route path="/" element={<Home />} />
                   <Route path="/marketplace" element={<Marketplace />} />
                   <Route path="/product/:id" element={<ProductDetails />} />
+                  <Route path="/live-bidding/:id" element={<LiveBidding />} />
                   <Route path="/marketplace/:id" element={<Navigate to="/product/:id" replace />} />
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/terms" element={<TermsAndConditions />} />
@@ -68,7 +74,9 @@ const App = () => (
                 {/* Auth Routes */}
                 <Route element={<AuthLayout />}>
                   <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
+                  <Route path="/register" element={<RegisterChoice />} />
+                  <Route path="/register/farmer" element={<FarmerRegister />} />
+                  <Route path="/register/consumer" element={<ConsumerRegister />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                 </Route>
                 
@@ -93,6 +101,7 @@ const App = () => (
                     <Route path="/farmer/dashboard/analytics" element={<Analytics />} />
                     <Route path="/farmer/dashboard/delivery" element={<DeliveryPage />} />
                     <Route path="/farmer/dashboard/add-product" element={<AddProduct />} />
+                    <Route path="/farmer/dashboard/live-bidding" element={<FarmerLiveBidding />} />
                     <Route path="/farmer/orders/:id" element={<OrderTracking />} />
                     <Route path="/farmer/chat/:id?" element={<Chat />} />
                   </Route>

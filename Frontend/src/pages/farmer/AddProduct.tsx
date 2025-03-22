@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Plus, Image, Tag, ListPlus, FileCheck, Loader2 } from 'lucide-react';
+import { productService, ProductInput } from "@/services/productService";
 
 const AddProduct = () => {
   const { toast } = useToast();
@@ -59,36 +60,97 @@ const AddProduct = () => {
     setIsSubmitting(true);
 
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Validate auction fields if auction is selected
+      if (formData.saleType === 'auction') {
+        if (!formData.minimumBid || parseFloat(formData.minimumBid) <= 0) {
+          throw new Error("Please provide a valid minimum bid amount");
+        }
+        if (!formData.auctionEndDate) {
+          throw new Error("Please provide an auction end date");
+        }
+        if (!formData.auctionEndTime) {
+          throw new Error("Please provide an auction end time");
+        }
+        
+        // Check if end time is in the future
+        const endDateTime = new Date(`${formData.auctionEndDate}T${formData.auctionEndTime}:00`);
+        if (endDateTime <= new Date()) {
+          throw new Error("Auction end time must be in the future");
+        }
+      }
+
+      // Convert form data to product object
+      const productData: ProductInput = {
+        name: formData.name,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.quantity),
+        unit: formData.unit,
+        category: formData.category,
+        isOrganic: formData.isOrganic,
+        isAvailable: true,
+        // If it's an auction item, add auction-specific fields
+        ...(formData.saleType === 'auction' && {
+          bidding: true,
+          price: 0, // For auctions, we'll use startingBid instead of price
+          startingBid: parseFloat(formData.minimumBid),
+          currentBid: parseFloat(formData.minimumBid), // Set initial currentBid to match startingBid
+          endBidTime: new Date(`${formData.auctionEndDate}T${formData.auctionEndTime}:00`)
+        })
+      };
+
+      console.log('Submitting product data:', productData);
       
-      // Here you would typically make an API call to save the product
-      // For now, we'll just show a success message
+      // Create product using the product service API
+      try {
+        const createdProduct = await productService.createProduct(productData);
+        console.log('Product created successfully:', createdProduct);
+        
+        if (createdProduct) {
+          // Handle image upload if there are images
+          if (formData.images.length > 0) {
+            // Typically, you would upload the images to a server here
+            // This would be handled by a separate API call
+            console.log('Images would be uploaded here:', formData.images);
+          }
+          
+          toast({
+            title: "Product Added",
+            description: "Your product has been successfully added to the marketplace.",
+          });
+          
+          // Reset form
+          setFormData({
+            name: '',
+            description: '',
+            price: '',
+            quantity: '',
+            unit: 'kg',
+            category: '',
+            isOrganic: false,
+            saleType: 'fixed',
+            auctionEndDate: '',
+            auctionEndTime: '',
+            minimumBid: '',
+            images: []
+          });
+          setImagePreview(null);
+        } else {
+          throw new Error("Failed to create product - no product returned");
+        }
+      } catch (apiError: any) {
+        console.error("API Error creating product:", apiError);
+        toast({
+          title: "API Error",
+          description: apiError.message || "Failed to add product. Please check server logs.",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error("Form validation error:", error);
       toast({
-        title: "Product Added",
-        description: "Your product has been successfully added to the marketplace.",
-      });
-      
-      // Reset form
-      setFormData({
-        name: '',
-        description: '',
-        price: '',
-        quantity: '',
-        unit: 'kg',
-        category: '',
-        isOrganic: false,
-        saleType: 'fixed',
-        auctionEndDate: '',
-        auctionEndTime: '',
-        minimumBid: '',
-        images: []
-      });
-      setImagePreview(null);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add product. Please try again.",
+        title: "Validation Error",
+        description: error.message || "Failed to add product. Please check your inputs.",
         variant: "destructive"
       });
     } finally {

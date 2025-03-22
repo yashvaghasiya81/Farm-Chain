@@ -90,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         title: "Registration successful",
         description: "Your account has been created successfully.",
       });
+      return newUser;
     } catch (error) {
       toast({
         title: "Registration failed",

@@ -1,7 +1,7 @@
-// This would be replaced with actual API calls in a production environment
-// Mock implementations for now
+import { api } from './api';
 
-interface User {
+// User interface
+export interface User {
   id: string;
   name: string;
   email: string;
@@ -9,130 +9,166 @@ interface User {
   profileImage?: string;
 }
 
-interface RegisterData {
+// Registration data interface
+export interface RegisterData {
   name: string;
   email: string;
   password: string;
   userType: "consumer" | "farmer";
 }
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Token storage key
+const TOKEN_KEY = 'auth_token';
+const USER_KEY = 'user_data';
 
-// Mock user data - store in localStorage to persist across refreshes
-const getMockUsers = (): User[] => {
-  const usersString = localStorage.getItem("mockUsers");
-  if (!usersString) {
-    const defaultUsers: User[] = [
-      {
-        id: "user1",
-        name: "John Consumer",
-        email: "john@example.com",
-        userType: "consumer",
-        profileImage: "https://i.pravatar.cc/150?u=john"
-      },
-      {
-        id: "user2",
-        name: "Mary Farmer",
-        email: "mary@example.com",
-        userType: "farmer",
-        profileImage: "https://i.pravatar.cc/150?u=mary"
-      },
-      {
-        id: "user3",
-        name: "Admin User",
-        email: "admin@example.com",
-        userType: "admin",
-        profileImage: "https://i.pravatar.cc/150?u=admin"
-      }
-    ];
-    localStorage.setItem("mockUsers", JSON.stringify(defaultUsers));
-    return defaultUsers;
-  }
-  return JSON.parse(usersString);
+// Get token from local storage
+export const getToken = (): string | null => {
+  return localStorage.getItem(TOKEN_KEY);
 };
 
+// Save token to local storage
+const saveToken = (token: string): void => {
+  localStorage.setItem(TOKEN_KEY, token);
+};
+
+// Save user data to local storage
+const saveUser = (user: User): void => {
+  console.log('Saving user to localStorage:', user);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+};
+
+// Clear auth data from local storage
+const clearAuthData = (): void => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+};
+
+// Auth service with real API integration
 export const authService = {
+  // Login user
   login: async (email: string, password: string): Promise<User> => {
-    // Simulate API call
-    await delay(1000);
-    
-    const users = getMockUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) {
-      throw new Error("Invalid credentials");
-    }
-    
-    // Store user in localStorage to persist session
-    localStorage.setItem("user", JSON.stringify(user));
-    
-    return user;
-  },
-  
-  register: async (userData: RegisterData): Promise<User> => {
-    // Simulate API call
-    await delay(1500);
-    
-    const users = getMockUsers();
-    
-    // Check if email already exists
-    if (users.some(u => u.email === userData.email)) {
-      throw new Error("Email already in use");
-    }
-    
-    // Create new user
-    const newUser: User = {
-      id: `user${users.length + 1}`,
-      name: userData.name,
-      email: userData.email,
-      userType: userData.userType,
-      profileImage: `https://i.pravatar.cc/150?u=${userData.email}`
-    };
-    
-    // Add to mock users and save to localStorage
-    users.push(newUser);
-    localStorage.setItem("mockUsers", JSON.stringify(users));
-    
-    // Store user in localStorage to persist session
-    localStorage.setItem("user", JSON.stringify(newUser));
-    
-    return newUser;
-  },
-  
-  logout: async (): Promise<void> => {
-    // Simulate API call
-    await delay(500);
-    
-    // Remove user from localStorage
-    localStorage.removeItem("user");
-  },
-  
-  getCurrentUser: async (): Promise<User | null> => {
-    // Check if user exists in localStorage
-    const userString = localStorage.getItem("user");
-    if (!userString) {
-      return null;
-    }
-    
     try {
-      const user = JSON.parse(userString);
-      return user;
+      const response = await api.post('/auth/login', { email, password });
+      
+      if (response.success && response.token && response.user) {
+        // Save token and user data
+        saveToken(response.token);
+        
+        // Transform backend user to frontend User format
+        const user: User = {
+          id: response.user.id || response.user._id,
+          name: response.user.name,
+          email: response.user.email,
+          userType: response.user.userType,
+          profileImage: response.user.profileImage || ''
+        };
+        
+        saveUser(user);
+        return user;
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
-      console.error("Error parsing user from localStorage:", error);
+      throw error;
+    }
+  },
+  
+  // Register new user
+  register: async (userData: RegisterData): Promise<User> => {
+    try {
+      console.log('Sending registration data:', userData);
+      const response = await api.post('/auth/register', userData);
+      
+      console.log('Registration response:', response);
+      
+      if (response.success && response.token && response.user) {
+        // Save token and user data
+        saveToken(response.token);
+        
+        // Transform backend user to frontend User format
+        const user: User = {
+          id: response.user.id || response.user._id,
+          name: response.user.name,
+          email: response.user.email,
+          userType: response.user.userType,
+          profileImage: response.user.profileImage || ''
+        };
+        
+        console.log('Transformed user object:', user);
+        
+        saveUser(user);
+        return user;
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (error) {
+      throw error;
+    }
+  },
+  
+  // Logout user
+  logout: async (): Promise<void> => {
+    // Clear auth data from local storage
+    clearAuthData();
+  },
+  
+  // Get current user
+  getCurrentUser: async (): Promise<User | null> => {
+    try {
+      // Check for token first
+      const token = getToken();
+      if (!token) {
+        console.log('No token found in localStorage');
+        return null;
+      }
+      
+      // Try to get user data from localStorage first
+      const userString = localStorage.getItem(USER_KEY);
+      console.log('User data from localStorage:', userString);
+      
+      if (userString) {
+        try {
+          const userData = JSON.parse(userString);
+          console.log('Parsed user data:', userData);
+          return userData;
+        } catch (error) {
+          console.error('Error parsing user data:', error);
+        }
+      }
+      
+      // If not in localStorage, fetch from API
+      console.log('Fetching user data from API');
+      const response = await api.get('/auth/me', true);
+      console.log('API response for user data:', response);
+      
+      if (response.success && response.data) {
+        // Transform backend user to frontend User format
+        const user: User = {
+          id: response.data.id || response.data._id,
+          name: response.data.name,
+          email: response.data.email,
+          userType: response.data.userType,
+          profileImage: response.data.profileImage || ''
+        };
+        
+        console.log('Transformed user from API:', user);
+        saveUser(user);
+        return user;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting current user:', error);
       return null;
     }
   },
   
+  // Reset password
   forgotPassword: async (email: string): Promise<void> => {
-    // Simulate API call
-    await delay(1000);
-    
-    const users = getMockUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) {
-      throw new Error("Email not found");
+    try {
+      await api.post('/auth/forgot-password', { email });
+    } catch (error) {
+      throw error;
     }
-    
-    // In a real app, this would send a password reset email
-    console.log(`Password reset email sent to ${email}`);
   }
 };

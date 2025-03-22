@@ -244,6 +244,15 @@ export default {
 					'83.33%': { color: '#ff00ff' },
 					'100%': { color: '#ff0000' }
 				},
+				'glow': {
+					'0%': { left: '-100%' },
+					'100%': { left: '100%' }
+				},
+				'shake': {
+					'0%, 100%': { transform: 'translateX(0)' },
+					'25%': { transform: 'translateX(-5px)' },
+					'75%': { transform: 'translateX(5px)' }
+				},
 				'spinner': {
 					'0%': { strokeDasharray: '1, 150', strokeDashoffset: '0' },
 					'50%': { strokeDasharray: '90, 150', strokeDashoffset: '-35' },
@@ -292,11 +301,6 @@ export default {
 					'80%': { transform: 'translate(3px, -3px)' },
 					'100%': { transform: 'translate(0)' }
 				},
-				'shake': {
-					'0%, 100%': { transform: 'translateX(0)' },
-					'10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-5px)' },
-					'20%, 40%, 60%, 80%': { transform: 'translateX(5px)' }
-				},
 				'slide-down': {
 					'0%': { transform: 'translateY(-100%)' },
 					'100%': { transform: 'translateY(100%)' }
@@ -317,22 +321,23 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'fade-in-up': 'fade-in-up 0.5s ease-out',
-				'fade-in': 'fade-in 0.5s ease-out',
-				'fade-out': 'fade-out 0.5s ease-out',
-				'bounce-subtle': 'bounce-subtle 3s ease-in-out infinite',
-				'pulse-subtle': 'pulse-subtle 3s ease-in-out infinite',
-				'slide-in-right': 'slide-in-right 0.5s ease-out',
+				'fade-in-up': 'fade-in-up 0.6s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'fade-out': 'fade-out 0.3s ease-out',
+				'bounce-subtle': 'bounce-subtle 2s ease infinite',
+				'pulse-subtle': 'pulse-subtle 2s ease infinite',
+				'slide-in-right': 'slide-in-right 0.3s ease-out',
 				'rotate-360': 'rotate-360 1s linear infinite',
-				'spin-slow': 'rotate-360 8s linear infinite',
-				'scale-up': 'scale-up 0.3s ease-out',
-				'wave': 'wave 2.5s ease-in-out infinite',
+				'scale-up': 'scale-up 0.2s ease-out',
+				'wave': 'wave 2.5s ease infinite',
 				'float': 'float 3s ease-in-out infinite',
-				'shimmer': 'shimmer 3s linear infinite',
-				'morph': 'morph 10s ease-in-out infinite',
-				'flip': 'flip 2s linear infinite',
-				'text-rainbow': 'text-rainbow 5s linear infinite',
-				'spinner': 'spinner 1.5s ease-in-out infinite',
+				'shimmer': 'shimmer 2s linear infinite',
+				'morph': 'morph 8s ease-in-out infinite',
+				'flip': 'flip 2s ease-in-out infinite',
+				'text-rainbow': 'text-rainbow 8s ease infinite',
+				'spinner': 'spinner 1.2s ease-in-out infinite',
+				'glow': 'glow 1.5s infinite',
+				'shake': 'shake 0.5s infinite',
 				'jello': 'jello 2s ease-in-out',
 				'gradient-flow': 'gradient-flow 3s ease infinite',
 				'tilt': 'tilt 10s ease-in-out infinite',
@@ -340,7 +345,6 @@ export default {
 				'scale-in-center': 'scale-in-center 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
 				'heartbeat': 'heartbeat 1.5s ease-in-out',
 				'glitch': 'glitch 0.8s infinite',
-				'shake': 'shake 0.8s cubic-bezier(.36,.07,.19,.97) both',
 				'slide-down': 'slide-down 0.5s ease-in-out forwards',
 				'slide-up': 'slide-up 0.5s ease-in-out forwards',
 				'slide-right': 'slide-right 0.5s ease-in-out forwards',

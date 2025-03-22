@@ -14,11 +14,13 @@ export interface Product {
   category: string;
   quantity: number;
   unit: string;
-  harvestDate: string;
+  harvestDate?: string;
   organic: boolean;
   bidding: boolean;
+  startingBid?: number;
   currentBid?: number;
   endBidTime?: string;
+  bidder?: any;
 }
 
 export interface CartItem {
@@ -50,7 +52,7 @@ interface MarketplaceContextType {
   removeFromCart: (productId: string) => void;
   updateCartItemQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
-  placeBid: (productId: string, amount: number) => Promise<void>;
+  placeBid: (productId: string, amount: number) => Promise<Product | null>;
   createOrder: () => Promise<string | null>;
   fetchOrders: () => Promise<void>;
 }
@@ -183,22 +185,36 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const placeBid = async (productId: string, amount: number) => {
     try {
-      await productService.placeBid(productId, amount);
+      console.log(`Placing bid of $${amount} on product ${productId}`);
+      
+      // Call the API to place the bid and get the updated product
+      const updatedProduct = await productService.placeBid(productId, amount);
+      
+      if (!updatedProduct) {
+        console.warn("No product data returned after placing bid");
+        throw new Error("No product data returned from bid");
+      }
+      
+      console.log("Received updated product after bid:", updatedProduct);
       
       // Update local product data with new bid
       setProducts(prevProducts => 
         prevProducts.map(product => 
-          product.id === productId 
-            ? { ...product, currentBid: amount } 
+          product.id === productId
+            ? { ...updatedProduct }
             : product
         )
       );
 
       toast({
         title: "Bid placed successfully",
-        description: `Your bid of $${amount} has been placed.`,
+        description: `Your bid of $${amount.toFixed(2)} has been placed.`,
       });
+      
+      // Return the updated product for immediate UI update
+      return updatedProduct;
     } catch (error) {
+      console.error("Error placing bid:", error);
       toast({
         title: "Bid failed",
         description: "There was an error placing your bid. Please try again.",

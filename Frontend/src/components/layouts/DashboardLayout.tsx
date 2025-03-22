@@ -1,5 +1,5 @@
-import React from "react";
-import { Outlet } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import { Link } from "react-router-dom";
 import {
   SidebarProvider,
@@ -17,15 +17,27 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { 
   Home, ShoppingBag, Package, MessageSquare, 
-  User, Settings, LogOut, Plus, Truck, LineChart
+  User, Settings, LogOut, Plus, Truck, LineChart,
+  Gavel
 } from "lucide-react";
 
 interface DashboardLayoutProps {
   userType: "consumer" | "farmer";
 }
 
-const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType }) => {
+const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType: propUserType }) => {
   const { user, logout } = useAuth();
+  const location = useLocation();
+  const [effectiveUserType, setEffectiveUserType] = useState<"consumer" | "farmer">(propUserType);
+  
+  // Determine the effective user type based on URL path
+  useEffect(() => {
+    if (location.pathname.includes('/farmer/')) {
+      setEffectiveUserType('farmer');
+    } else if (location.pathname.includes('/consumer/')) {
+      setEffectiveUserType('consumer');
+    }
+  }, [location.pathname]);
 
   // Define menu items based on user type
   const getMenuItems = () => {
@@ -41,12 +53,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType }) => {
       { title: "My Products", url: "/farmer/dashboard?tab=products", icon: ShoppingBag },
       { title: "Orders", url: "/farmer/dashboard?tab=orders", icon: Package },
       { title: "Add Product", url: "/farmer/dashboard/add-product", icon: Plus },
+      { title: "Live Bidding", url: "/farmer/dashboard/live-bidding", icon: Gavel },
       { title: "Delivery", url: "/farmer/dashboard/delivery", icon: Truck },
       { title: "Analytics", url: "/farmer/dashboard/analytics", icon: LineChart },
       { title: "Messages", url: "/farmer/chat", icon: MessageSquare },
     ];
 
-    return userType === "consumer" ? consumerMenuItems : farmerMenuItems;
+    return effectiveUserType === "consumer" ? consumerMenuItems : farmerMenuItems;
   };
 
   const menuItems = getMenuItems();
@@ -62,7 +75,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType }) => {
               </div>
               <div className="flex flex-col">
                 <span className="font-medium text-sm">{user?.name}</span>
-                <span className="text-xs text-gray-500 capitalize">{userType}</span>
+                <span className="text-xs text-gray-500 capitalize">{effectiveUserType}</span>
               </div>
             </div>
           </SidebarHeader>
@@ -89,7 +102,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType }) => {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link to={`/${userType}/dashboard/profile`} className="flex items-center space-x-3">
+                    <Link to={`/${effectiveUserType}/dashboard/profile`} className="flex items-center space-x-3">
                       <User className="h-5 w-5" />
                       <span>Profile</span>
                     </Link>
@@ -97,7 +110,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType }) => {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
-                    <Link to={`/${userType}/dashboard/settings`} className="flex items-center space-x-3">
+                    <Link to={`/${effectiveUserType}/dashboard/settings`} className="flex items-center space-x-3">
                       <Settings className="h-5 w-5" />
                       <span>Settings</span>
                     </Link>
@@ -125,7 +138,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType }) => {
           <div className="py-4 px-6 border-b flex justify-between items-center">
             <SidebarTrigger />
             <h1 className="text-xl font-semibold">
-              {userType === "consumer" ? "Consumer Dashboard" : "Farmer Dashboard"}
+              {effectiveUserType === "consumer" ? "Consumer Dashboard" : "Farmer Dashboard"}
             </h1>
             <div className="w-10"></div> {/* Empty space for alignment */}
           </div>

@@ -23,6 +23,7 @@ interface Product {
   bidding: boolean;
   currentBid?: number;
   endBidTime?: string;
+  startingBid?: number;
 }
 
 interface ProductCardProps {
@@ -75,6 +76,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     } else {
       const days = Math.floor(hours / 24);
       return `${days} days left`;
+    }
+  };
+
+  // Get product price or current bid
+  const getPrice = () => {
+    if (product.bidding) {
+      return formatPrice(product.currentBid || product.startingBid || product.price);
+    } else {
+      return formatPrice(product.price);
     }
   };
 
@@ -145,10 +155,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               <div className="text-right">
                 {product.bidding ? (
                   <div className="overflow-hidden">
-                    <p className="font-bold text-lg text-harvest-gold-500 animate-float">{formatPrice(product.currentBid || product.price)}</p>
+                    <p className="font-bold text-lg text-harvest-gold-500 animate-float">{getPrice()}</p>
                   </div>
                 ) : (
-                  <p className="font-bold text-lg transform transition-all duration-300 group-hover:scale-110 group-hover:text-farm-green-600">{formatPrice(product.price)}</p>
+                  <p className="font-bold text-lg transform transition-all duration-300 group-hover:scale-110 group-hover:text-farm-green-600">{getPrice()}</p>
                 )}
               </div>
             </div>
