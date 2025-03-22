@@ -18,7 +18,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Clock, Gavel, Users, UserCheck, ArrowRight, AlertCircle, Bell, DollarSign, TrendingUp } from "lucide-react";
 import { Product } from "@/services/productService";
-import { socket } from "@/lib/socket";
+import { getSocket } from "@/lib/socket";
 import { AnimatePresence, motion } from "framer-motion";
 
 const LiveBidding = () => {
@@ -86,6 +86,8 @@ const LiveBidding = () => {
   // Process products into auction categories
   useEffect(() => {
     if (!products || products.length === 0) return;
+    
+    const socket = getSocket();
 
     const auctionItems = products.filter(product => product.bidding);
     setAuctionProducts(auctionItems);
@@ -137,6 +139,8 @@ const LiveBidding = () => {
 
   // Enhanced socket listeners for real-time updates
   useEffect(() => {
+    const socket = getSocket();
+    
     socket.on("newBid", (data) => {
       const { auctionId, amount, bidder, timestamp } = data;
       

@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { productService } from "@/services/productService";
 import { orderService } from "@/services/orderService";
 import { toast } from "@/components/ui/use-toast";
+import { getSocket, placeBid as emitBid } from "@/lib/socket";
+import { useAuth } from "@/context/AuthContext";
 
 export interface Product {
   id: string;
@@ -74,6 +76,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
   // Load cart from localStorage on initialization
   useEffect(() => {
@@ -92,6 +95,39 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
+
+  // Listen for bid updates from socket
+  useEffect(() => {
+    // Get the socket instance
+    const socket = getSocket();
+    
+    // Handle incoming bid updates
+    const handleBidUpdate = (data: any) => {
+      const { auctionId, amount, bidder } = data;
+      console.log(`Received bid update for ${auctionId}: $${amount} by ${bidder?.name || 'Unknown'}`);
+      
+      // Update the product in state with the new bid information
+      setProducts(prevProducts => 
+        prevProducts.map(product => 
+          product.id === auctionId
+            ? {
+                ...product,
+                currentBid: amount,
+                bidder: bidder
+              }
+            : product
+        )
+      );
+    };
+    
+    // Add socket event listener
+    socket.on('newBid', handleBidUpdate);
+    
+    // Clean up listener on unmount
+    return () => {
+      socket.off('newBid', handleBidUpdate);
+    };
+  }, []);
 
   const fetchProducts = useCallback(async (filters?: any) => {
     setIsLoading(true);
@@ -184,10 +220,23 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const placeBid = async (productId: string, amount: number) => {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to place a bid",
+        variant: "destructive",
+      });
+      throw new Error("User not authenticated");
+    }
+    
     try {
       console.log(`Placing bid of $${amount} on product ${productId}`);
       
-      // Call the API to place the bid and get the updated product
+      // First, emit the bid via socket for real-time updates
+      // The socket.ts placeBid requires auctionId, amount, userId
+      await emitBid(productId, amount, user.id);
+      
+      // Then call the API to record the bid in the database
       const updatedProduct = await productService.placeBid(productId, amount);
       
       if (!updatedProduct) {
@@ -197,7 +246,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       
       console.log("Received updated product after bid:", updatedProduct);
       
-      // Update local product data with new bid
+      // The product state will be updated by the socket event listener
+      // We still update it here to ensure consistency
       setProducts(prevProducts => 
         prevProducts.map(product => 
           product.id === productId
@@ -205,22 +255,16 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
             : product
         )
       );
-
-      toast({
-        title: "Bid placed successfully",
-        description: `Your bid of $${amount.toFixed(2)} has been placed.`,
-      });
       
-      // Return the updated product for immediate UI update
       return updatedProduct;
     } catch (error) {
       console.error("Error placing bid:", error);
       toast({
         title: "Bid failed",
-        description: "There was an error placing your bid. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to place bid. Please try again.",
         variant: "destructive",
       });
-      throw error;
+      return null;
     }
   };
 

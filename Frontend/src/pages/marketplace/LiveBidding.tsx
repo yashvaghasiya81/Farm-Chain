@@ -16,9 +16,9 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { AlertCircle, ArrowLeft, Clock, Gavel, Users, UserCheck, Award } from "lucide-react";
+import { AlertCircle, ArrowLeft, Clock, Gavel, Users, UserCheck, Award, RefreshCw } from "lucide-react";
 import { Product } from "@/services/productService";
-import { socket } from "@/lib/socket";
+import { getSocket, getSocketUrl, createSocket, checkConnection } from "@/lib/socket";
 
 const LiveBidding = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,12 +39,62 @@ const LiveBidding = () => {
   }>>([]);
   const [participants, setParticipants] = useState<number>(0);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
   
   // Use refs to prevent stale closures and track component mount state
   const isMounted = useRef(true);
   const productRef = useRef<Product | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const hasLoaded = useRef(false); // Track if we've already loaded the product
+  
+  // Debug socket connection on component mount
+  useEffect(() => {
+    console.log('LiveBidding: Component mounted');
+    console.log('Socket URL:', getSocketUrl());
+    
+    // Get the socket instance
+    const socket = getSocket();
+    
+    console.log('Socket instance:', socket);
+    console.log('Socket connected:', socket?.connected);
+    console.log('Socket ID:', socket?.id);
+    
+    // Check socket connection
+    const isConnected = checkConnection();
+    setSocketConnected(isConnected);
+    
+    const handleConnect = () => {
+      console.log('LiveBidding: Socket connected event fired');
+      setSocketConnected(true);
+    };
+    
+    const handleDisconnect = (reason) => {
+      console.log(`LiveBidding: Socket disconnected: ${reason}`);
+      setSocketConnected(false);
+    };
+    
+    const handleConnectionError = (error) => {
+      console.error('LiveBidding: Socket connection error:', error);
+      setSocketConnected(false);
+    };
+    
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectionError);
+    
+    // Set up a periodic check for the socket connection
+    const connectionCheckInterval = setInterval(() => {
+      const connected = checkConnection();
+      setSocketConnected(connected);
+    }, 5000); // Check every 5 seconds
+    
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectionError);
+      clearInterval(connectionCheckInterval);
+    };
+  }, []);
   
   // Generate mock bid history (memoized to prevent re-creation)
   const generateMockBidHistory = useCallback((product: Product) => {
@@ -90,7 +140,9 @@ const LiveBidding = () => {
         setIsLoading(true);
         setError(null);
         
+        console.log('LiveBidding: Loading product with ID:', id);
         const productData = await fetchProductById(id);
+        console.log('LiveBidding: Product data loaded:', productData);
         
         if (!isMounted.current) return;
         
@@ -120,6 +172,8 @@ const LiveBidding = () => {
         hasLoaded.current = true; // Mark as loaded
         setProduct(productData);
         productRef.current = productData;
+        
+        console.log('LiveBidding: Product set to state:', productData);
         
         // Set initial bid amount
         const minimumNextBid = (productData.currentBid || productData.startingBid || 0) + 0.5;
@@ -162,13 +216,30 @@ const LiveBidding = () => {
   
   // Set up socket connection for real-time updates
   useEffect(() => {
-    if (!product) return;
+    if (!product) {
+      console.log('LiveBidding: No product data, skipping socket setup');
+      return;
+    }
+    
+    console.log(`LiveBidding: Setting up socket connection for auction ${product.id}`);
+    console.log('LiveBidding: Socket connected status:', getSocket().connected);
+    console.log('LiveBidding: Socket ID:', getSocket().id);
     
     // Join the auction room
-    socket.emit("joinAuction", { auctionId: product.id });
+    getSocket().emit("auction:join", product.id, (response) => {
+      console.log("Joined auction room:", response);
+      // Update participant count on successful join
+      if (response && response.success) {
+        setParticipants(response.participantCount);
+      }
+    });
+    
+    // Confirm connection status
+    console.log(`LiveBidding: Socket connected: ${getSocket().connected ? 'Yes' : 'No'}, ID: ${getSocket().id}`);
     
     // Listen for new bids
-    const handleNewBid = (data) => {
+    const handleNewBid = (data: any) => {
+      console.log(`LiveBidding: Received new bid:`, data);
       if (!isMounted.current) return;
       
       // Update product with new bid
@@ -187,7 +258,7 @@ const LiveBidding = () => {
         {
           amount: data.amount,
           bidder: typeof data.bidder === 'object' ? data.bidder.name : 'Anonymous',
-          timestamp: new Date()
+          timestamp: new Date(data.timestamp)
         },
         ...prev
       ]);
@@ -203,26 +274,35 @@ const LiveBidding = () => {
     };
     
     // Listen for participant count updates
-    const handleParticipantUpdate = (data) => {
-      if (isMounted.current) {
-        setParticipants(data.count);
+    const handleParticipantUpdate = (data: any) => {
+      console.log(`LiveBidding: Participant update:`, data);
+      if (isMounted.current && data.auctionId === product.id) {
+        setParticipants(data.participantCount);
       }
     };
     
-    socket.on("newBid", handleNewBid);
-    socket.on("participantUpdate", handleParticipantUpdate);
+    getSocket().on("auction:bid", handleNewBid);
+    getSocket().on("auction:update", handleParticipantUpdate);
     
     return () => {
+      console.log('LiveBidding: Cleaning up socket connections');
       // Leave the auction room
-      socket.emit("leaveAuction", { auctionId: product.id });
-      socket.off("newBid", handleNewBid);
-      socket.off("participantUpdate", handleParticipantUpdate);
+      getSocket().emit("auction:leave", product.id, (response) => {
+        console.log("Left auction room:", response);
+      });
+      getSocket().off("auction:bid", handleNewBid);
+      getSocket().off("auction:update", handleParticipantUpdate);
     };
   }, [product?.id]); // Only depend on product.id, not the entire product object
   
   // Update time left for auction - only set up once when product loads
   useEffect(() => {
-    if (!product || !product.bidding || !product.endBidTime) return;
+    if (!product || !product.bidding || !product.endBidTime) {
+      console.log('LiveBidding: Missing endBidTime, skipping timer setup');
+      return;
+    }
+    
+    console.log('LiveBidding: Setting up auction timer with end time:', product.endBidTime);
     
     const calculateTimeLeft = () => {
       if (!isMounted.current || !productRef.current?.endBidTime) return;
@@ -294,32 +374,37 @@ const LiveBidding = () => {
     setIsPlacingBid(true);
     
     try {
-      const updatedProduct = await placeBid(product.id, bidAmount);
+      console.log('LiveBidding: Placing bid:', {
+        auctionId: product.id,
+        amount: bidAmount,
+        userId: user.id || user._id
+      });
       
-      if (!isMounted.current) return;
-      
-      if (updatedProduct) {
-        setProduct(updatedProduct);
-        productRef.current = updatedProduct;
+      // Use socket for real-time bidding
+      getSocket().emit("auction:bid", {
+        auctionId: product.id,
+        amount: bidAmount,
+        userId: user.id || user._id
+      }, (response) => {
+        console.log("Bid response:", response);
         
-        // Add to bid history
-        setBidHistory(prev => [
-          {
-            amount: bidAmount,
-            bidder: user.name || "You",
-            timestamp: new Date()
-          },
-          ...prev
-        ]);
+        // Handle bid response
+        if (response && response.success) {
+          // Bid will be reflected via socket event
+          toast({
+            title: "Bid Placed!",
+            description: `You successfully bid $${bidAmount.toFixed(2)}`,
+          });
+        } else {
+          toast({
+            title: "Bid Failed",
+            description: response?.error || "Failed to place your bid. Please try again.",
+            variant: "destructive",
+          });
+        }
         
-        // Update minimum bid
-        setBidAmount(bidAmount + 0.5);
-        
-        toast({
-          title: "Bid Placed!",
-          description: `You successfully bid $${bidAmount.toFixed(2)}`,
-        });
-      }
+        setIsPlacingBid(false);
+      });
     } catch (error) {
       console.error("Error placing bid:", error);
       
@@ -329,11 +414,36 @@ const LiveBidding = () => {
           description: "Failed to place your bid. Please try again.",
           variant: "destructive",
         });
-      }
-    } finally {
-      if (isMounted.current) {
         setIsPlacingBid(false);
       }
+    }
+  };
+  
+  const handleReconnect = () => {
+    console.log('LiveBidding: Manual reconnection requested');
+    createSocket();
+    const connected = checkConnection();
+    setSocketConnected(connected);
+    
+    if (connected && product) {
+      // Rejoin the auction room
+      getSocket().emit("auction:join", product.id, (response) => {
+        console.log("Rejoined auction room:", response);
+        // Update participant count on successful join
+        if (response && response.success) {
+          setParticipants(response.participantCount);
+          toast({
+            title: "Reconnected",
+            description: "Successfully reconnected to the auction room"
+          });
+        }
+      });
+    } else {
+      toast({
+        title: "Reconnection Failed",
+        description: "Could not reconnect to the socket server",
+        variant: "destructive"
+      });
     }
   };
   
@@ -372,6 +482,15 @@ const LiveBidding = () => {
       >
         <ArrowLeft className="h-4 w-4 mr-2" /> Back to Product
       </Button>
+      
+      {!socketConnected && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-yellow-800 flex items-center">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            Socket connection issue. Real-time updates may not work.
+          </p>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Product Info Column */}

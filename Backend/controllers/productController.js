@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
+const User = require('../models/User');
 
 // @desc    Get all products
 // @route   GET /api/products
@@ -244,56 +245,114 @@ exports.getProductsByCategory = asyncHandler(async (req, res, next) => {
 
 // @desc    Place a bid on an auction product
 // @route   POST /api/products/:id/bid
-// @access  Private (Any authenticated user)
-exports.placeBid = asyncHandler(async (req, res, next) => {
-  // Get the product
-  const product = await Product.findById(req.params.id);
-  
-  if (!product) {
-    return next(
-      new ErrorResponse(`Product not found with id of ${req.params.id}`, 404)
-    );
+// @access  Private
+const placeBid = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { bidAmount } = req.body;
+    const userId = req.user.id;
+
+    if (!bidAmount || bidAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid bid amount is required'
+      });
+    }
+
+    // Find the product
+    const product = await Product.findById(id);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    // Check if product is an auction product
+    if (!product.bidding) {
+      return res.status(400).json({
+        success: false,
+        message: 'This product is not available for auction'
+      });
+    }
+
+    // Check if auction has ended
+    const endTime = new Date(product.endBidTime);
+    const now = new Date();
+    if (now > endTime) {
+      return res.status(400).json({
+        success: false,
+        message: 'This auction has ended'
+      });
+    }
+
+    // Check if bid is higher than current/starting bid
+    const currentBid = product.currentBid || product.startingBid;
+    if (bidAmount <= currentBid) {
+      return res.status(400).json({
+        success: false,
+        message: `Bid must be higher than current bid of $${currentBid}`
+      });
+    }
+
+    // Check if user is not bidding on their own product
+    if (product.farmer.toString() === userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot bid on your own product'
+      });
+    }
+
+    // Update product with new bid
+    product.currentBid = bidAmount;
+    product.bidder = userId;
+    
+    // Save the product
+    await product.save();
+    
+    // Get user information to include in response
+    const user = await User.findById(userId).select('name email profileImage');
+
+    // Get the socket.io instance from the request
+    const io = req.app.get('io');
+    
+    // If socket.io is available, emit the bid event
+    if (io) {
+      // Emit to all clients in the auction room
+      io.to(id).emit('newBid', {
+        auctionId: id,
+        amount: bidAmount,
+        bidder: {
+          id: userId,
+          name: user.name,
+          // Don't include email for privacy reasons
+          profileImage: user.profileImage || null
+        },
+        timestamp: new Date()
+      });
+      
+      console.log(`Emitted real-time bid update for auction ${id}`);
+    }
+
+    // Populate user information for the response
+    await product.populate([
+      { path: 'farmer', select: 'name profileImage' },
+      { path: 'bidder', select: 'name profileImage' }
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: product
+    });
+  } catch (error) {
+    console.error('Error placing bid:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: error.message
+    });
   }
-  
-  // Check if product is an auction item
-  if (!product.bidding) {
-    return next(
-      new ErrorResponse(`Product is not available for bidding`, 400)
-    );
-  }
-  
-  // Check if auction has ended
-  if (product.endBidTime && new Date(product.endBidTime) < new Date()) {
-    return next(
-      new ErrorResponse(`Auction has ended`, 400)
-    );
-  }
-  
-  // Get bid amount from request body
-  const { bidAmount } = req.body;
-  
-  // Validate bid amount
-  if (!bidAmount || typeof bidAmount !== 'number') {
-    return next(
-      new ErrorResponse(`Please provide a valid bid amount`, 400)
-    );
-  }
-  
-  // Check if bid amount is higher than current bid
-  if (bidAmount <= product.currentBid) {
-    return next(
-      new ErrorResponse(`Bid amount must be higher than current bid of ${product.currentBid}`, 400)
-    );
-  }
-  
-  // Update product with new bid
-  product.currentBid = bidAmount;
-  product.bidder = req.user.id;
-  
-  await product.save();
-  
-  res.status(200).json({
-    success: true,
-    data: product
-  });
-}); 
+};
+
+exports.placeBid = placeBid; 
