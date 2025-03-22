@@ -30,6 +30,7 @@ import Profile from "@/pages/farmer/Profile";
 import Settings from "@/pages/farmer/Settings";
 import Analytics from "@/pages/farmer/Analytics";
 import DeliveryPage from "@/pages/farmer/Delivery";
+import AddProduct from "@/pages/farmer/AddProduct";
 
 // Layout components
 import MainLayout from "@/components/layouts/MainLayout";
@@ -87,6 +88,7 @@ const App = () => (
                     <Route path="/farmer/dashboard/settings" element={<Settings />} />
                     <Route path="/farmer/dashboard/analytics" element={<Analytics />} />
                     <Route path="/farmer/dashboard/delivery" element={<DeliveryPage />} />
+                    <Route path="/farmer/dashboard/add-product" element={<AddProduct />} />
                     <Route path="/farmer/orders/:id" element={<OrderTracking />} />
                     <Route path="/farmer/chat/:id?" element={<Chat />} />
                   </Route>

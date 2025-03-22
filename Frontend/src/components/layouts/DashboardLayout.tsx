@@ -40,7 +40,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ userType }) => {
       { title: "Dashboard", url: "/farmer/dashboard", icon: Home },
       { title: "My Products", url: "/farmer/dashboard?tab=products", icon: ShoppingBag },
       { title: "Orders", url: "/farmer/dashboard?tab=orders", icon: Package },
-      { title: "Add Product", url: "/farmer/dashboard?tab=add-product", icon: Plus },
+      { title: "Add Product", url: "/farmer/dashboard/add-product", icon: Plus },
       { title: "Delivery", url: "/farmer/dashboard/delivery", icon: Truck },
       { title: "Analytics", url: "/farmer/dashboard/analytics", icon: LineChart },
       { title: "Messages", url: "/farmer/chat", icon: MessageSquare },
