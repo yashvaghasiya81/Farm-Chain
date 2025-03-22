@@ -248,6 +248,10 @@ export default {
 					'0%': { left: '-100%' },
 					'100%': { left: '100%' }
 				},
+				'glow-once': {
+					'0%': { left: '-100%' },
+					'100%': { left: '100%' }
+				},
 				'shake': {
 					'0%, 100%': { transform: 'translateX(0)' },
 					'25%': { transform: 'translateX(-5px)' },
@@ -321,29 +325,30 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'fade-in-up': 'fade-in-up 0.6s ease-out',
-				'fade-in': 'fade-in 0.3s ease-out',
-				'fade-out': 'fade-out 0.3s ease-out',
-				'bounce-subtle': 'bounce-subtle 2s ease infinite',
-				'pulse-subtle': 'pulse-subtle 2s ease infinite',
-				'slide-in-right': 'slide-in-right 0.3s ease-out',
+				'fade-in-up': 'fade-in-up 0.5s ease-out',
+				'fade-in': 'fade-in 0.5s ease-out',
+				'fade-out': 'fade-out 0.5s ease-out',
+				'bounce-subtle': 'bounce-subtle 2s ease-in-out infinite',
+				'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite',
+				'slide-in-right': 'slide-in-right 0.5s ease-out',
 				'rotate-360': 'rotate-360 1s linear infinite',
-				'scale-up': 'scale-up 0.2s ease-out',
-				'wave': 'wave 2.5s ease infinite',
+				'scale-up': 'scale-up 0.3s ease-out',
+				'wave': 'wave 1.5s infinite',
 				'float': 'float 3s ease-in-out infinite',
-				'shimmer': 'shimmer 2s linear infinite',
-				'morph': 'morph 8s ease-in-out infinite',
-				'flip': 'flip 2s ease-in-out infinite',
-				'text-rainbow': 'text-rainbow 8s ease infinite',
+				'shimmer': 'shimmer 3s linear infinite',
+				'morph': 'morph 8s linear infinite',
+				'flip': 'flip 2s linear infinite',
+				'text-rainbow': 'text-rainbow 5s linear infinite',
+				'glow': 'glow 2s infinite',
+				'glow-once': 'glow-once 1s forwards',
+				'shake': 'shake 0.3s ease-in-out',
+				'heartbeat': 'heartbeat 1.5s ease-in-out',
+				'scale-in-center': 'scale-in-center 0.3s ease-out',
 				'spinner': 'spinner 1.2s ease-in-out infinite',
-				'glow': 'glow 1.5s infinite',
-				'shake': 'shake 0.5s infinite',
 				'jello': 'jello 2s ease-in-out',
 				'gradient-flow': 'gradient-flow 3s ease infinite',
 				'tilt': 'tilt 10s ease-in-out infinite',
 				'blur-in': 'blur-in 0.5s ease-out',
-				'scale-in-center': 'scale-in-center 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-				'heartbeat': 'heartbeat 1.5s ease-in-out',
 				'glitch': 'glitch 0.8s infinite',
 				'slide-down': 'slide-down 0.5s ease-in-out forwards',
 				'slide-up': 'slide-up 0.5s ease-in-out forwards',
@@ -356,5 +361,7 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		require("tailwindcss-animate")
+	],
 } satisfies Config;

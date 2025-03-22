@@ -28,23 +28,38 @@ interface Product {
 
 interface ProductCardProps {
   product: Product;
+  index?: number;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) => {
   const { addToCart } = useMarketplace();
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   
+  // Calculate staggered animation delay based on index
+  const animationDelay = `${index * 0.1}s`;
+  
   const handleAddToCart = (e: React.MouseEvent) => {
+    // Prevent default link behavior
     e.preventDefault();
     e.stopPropagation();
     
+    // Prevent multiple clicks while processing
+    if (isAddingToCart) return;
+    
+    // Set adding state
     setIsAddingToCart(true);
+    
+    // Add to cart
     addToCart(product, 1);
     
-    setTimeout(() => {
-      setIsAddingToCart(false);
+    // Reset state after delay
+    const timer = setTimeout(() => {
+      if (timer) {
+        setIsAddingToCart(false);
+        clearTimeout(timer);
+      }
     }, 1000);
   };
 
@@ -91,31 +106,36 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
     <TiltCard 
       className={cn(
-        "relative bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm animate-fade-in-up",
-        isHovered ? "z-10" : "z-0"
+        "relative bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm h-full flex flex-col",
+        "transition-all duration-300 animate-fade-in-up",
+        isHovered ? "z-10 shadow-lg transform scale-[1.02]" : "z-0",
+        "hover:border-farm-green-300"
       )}
-      tiltMaxAngle={5}
-      glareMaxOpacity={0.2}
+      style={{ animationDelay }}
+      tiltMaxAngle={3}
+      glareMaxOpacity={0.1}
       perspective={1500}
-      gyroscope={true}
+      gyroscope={false}
     >
       <div
+        className="flex flex-col h-full"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <Link to={`/product/${product.id}`} className="block">
+        <Link to={`/product/${product.id}`} className="flex flex-col flex-grow">
           <div className="absolute top-2 right-2 z-20 flex space-x-2">
             <button 
               onClick={toggleFavorite}
               className={cn(
                 "h-8 w-8 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all",
+                "transform hover:scale-110 hover:shadow-md",
                 isFavorite ? "text-red-500" : "text-gray-400"
               )}
               aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
               title={isFavorite ? "Remove from favorites" : "Add to favorites"}
             >
               <Heart className={cn(
-                "h-5 w-5",
+                "h-5 w-5 transition-all duration-300",
                 isFavorite && "animate-heartbeat fill-current"
               )} />
             </button>
@@ -129,13 +149,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             />
             
             {product.organic && (
-              <Badge className="absolute top-2 left-2 bg-farm-green-500 animate-fade-in z-10 shimmer">
+              <Badge className="absolute top-2 left-2 bg-farm-green-500 z-10 animate-fade-in">
                 <Leaf className="h-3 w-3 mr-1 animate-pulse-subtle" /> Organic
               </Badge>
             )}
             
             {product.bidding && (
-              <Badge className="absolute bottom-2 left-2 bg-harvest-gold-500 animate-fade-in z-10 shimmer">
+              <Badge className="absolute bottom-2 left-2 bg-harvest-gold-500 z-10 animate-fade-in">
                 <Clock className="h-3 w-3 mr-1 animate-pulse-subtle" /> {getTimeLeft()}
               </Badge>
             )}
@@ -143,40 +163,47 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </div>
           
-          <div className="p-4 relative z-10">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold text-lg group-hover:text-farm-green-700 transition-colors duration-300">{product.name}</h3>
-                <p className="text-sm text-gray-500">{product.farmerName}</p>
-                <Badge variant="outline" className="text-xs mt-2">
-                  {product.category}
-                </Badge>
+          <div className="p-4 flex-grow flex flex-col">
+            <div className="flex justify-between items-start h-full">
+              <div className="flex flex-col transition-transform duration-300 group-hover:translate-x-1">
+                <h3 className="font-semibold text-lg group-hover:text-farm-green-700 transition-colors duration-300 truncate">{product.name}</h3>
+                <p className="text-sm text-gray-500 truncate">{product.farmerName}</p>
+                <div className="mt-2 transform transition-all duration-300 group-hover:scale-105 origin-left">
+                  <Badge variant="outline" className="text-xs">
+                    {product.category}
+                  </Badge>
+                </div>
               </div>
               <div className="text-right">
                 {product.bidding ? (
-                  <div className="overflow-hidden">
-                    <p className="font-bold text-lg text-harvest-gold-500 animate-float">{getPrice()}</p>
+                  <div className="transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">
+                    <p className="font-bold text-lg text-harvest-gold-500">{getPrice()}</p>
                   </div>
                 ) : (
-                  <p className="font-bold text-lg transform transition-all duration-300 group-hover:scale-110 group-hover:text-farm-green-600">{getPrice()}</p>
+                  <p className="font-bold text-lg text-farm-green-600 transform transition-all duration-300 group-hover:scale-110 group-hover:-translate-y-1">{getPrice()}</p>
                 )}
               </div>
             </div>
           </div>
         </Link>
         
-        {!product.bidding && (
-          <div className="px-4 pb-4 transition-all duration-300">
+        <div className="px-4 pb-4 mt-auto">
+          {!product.bidding ? (
             <AnimatedButton 
-              variant={isAddingToCart ? "glowing" : "pulse"}
+              variant={isAddingToCart ? "glowing" : "default"}
               size="default"
               onClick={handleAddToCart}
-              className="w-full text-sm group"
+              className={cn(
+                "w-full text-sm transition-all duration-300 hover:shadow-md",
+                isAddingToCart 
+                  ? "bg-farm-green-600 text-white" 
+                  : "bg-farm-green-500 hover:bg-farm-green-600 text-white hover:transform hover:-translate-y-1"
+              )}
               disabled={isAddingToCart}
             >
               {isAddingToCart ? (
                 <span className="flex items-center justify-center">
-                  <span className="animate-scale-in-center mr-2">✓</span> Added to Cart
+                  <span className="mr-2 animate-scale-in-center">✓</span> Added to Cart
                 </span>
               ) : (
                 <span className="flex items-center justify-center">
@@ -185,8 +212,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                 </span>
               )}
             </AnimatedButton>
-          </div>
-        )}
+          ) : (
+            <Link to={`/live-bidding/${product.id}`} className="block w-full">
+              <AnimatedButton 
+                variant="highlight"
+                size="default"
+                className="w-full text-sm group bg-harvest-gold-500 hover:bg-harvest-gold-600 text-white transition-all duration-300 hover:shadow-md hover:transform hover:-translate-y-1"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent card click
+                }}
+              >
+                <span className="flex items-center justify-center">
+                  <Clock className="h-4 w-4 mr-2 transition-transform duration-300 group-hover:scale-110" /> 
+                  Bid Now
+                </span>
+              </AnimatedButton>
+            </Link>
+          )}
+        </div>
       </div>
     </TiltCard>
   );

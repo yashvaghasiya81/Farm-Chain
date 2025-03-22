@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { productService } from "@/services/productService";
 import { orderService } from "@/services/orderService";
 import { toast } from "@/components/ui/use-toast";
@@ -77,6 +77,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+
+  // Track last cart update time to prevent rapid consecutive updates
+  const lastCartUpdateRef = useRef<number>(0);
 
   // Load cart from localStorage on initialization
   useEffect(() => {
@@ -166,7 +169,14 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   };
 
-  const addToCart = (product: Product, quantity: number) => {
+  const addToCart = useCallback((product: Product, quantity: number) => {
+    // Prevent rapid consecutive calls (debounce)
+    const now = Date.now();
+    if (now - lastCartUpdateRef.current < 500) {
+      return; // Ignore clicks that happen too quickly
+    }
+    lastCartUpdateRef.current = now;
+    
     setCart(prevCart => {
       const existingItemIndex = prevCart.findIndex(item => item.productId === product.id);
 
@@ -189,7 +199,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       title: "Product added to cart",
       description: `${quantity} x ${product.name} added to your shopping cart.`,
     });
-  };
+  }, [toast]);
 
   const removeFromCart = (productId: string) => {
     setCart(prevCart => prevCart.filter(item => item.productId !== productId));

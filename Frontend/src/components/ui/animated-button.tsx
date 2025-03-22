@@ -9,10 +9,11 @@ const animatedButtonVariants = cva(
     variants: {
       variant: {
         default: "",
-        glowing: "after:absolute after:content-[''] after:bg-white after:opacity-20 after:top-0 after:left-[-100%] after:w-full after:h-full after:skew-x-[-20deg] after:animate-glow",
-        pulse: "animate-pulse",
+        glowing: "after:absolute after:content-[''] after:bg-white after:opacity-20 after:top-0 after:left-[-100%] after:w-full after:h-full after:skew-x-[-20deg] after:animate-glow-once",
+        pulse: "hover:animate-pulse",
         bounce: "hover:animate-bounce",
         shake: "hover:animate-shake",
+        highlight: "bg-harvest-gold-500 hover:bg-harvest-gold-600 text-white border-none shadow-md hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
       },
       size: {
         default: "",

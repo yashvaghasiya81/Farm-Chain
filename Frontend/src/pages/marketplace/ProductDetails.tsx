@@ -332,7 +332,7 @@ const ProductDetails = () => {
                     className="bg-harvest-gold-600 hover:bg-harvest-gold-700"
                     variant="glowing"
                   >
-                    Live Bidding
+                    Bid Now
                   </AnimatedButton>
                 </div>
                 

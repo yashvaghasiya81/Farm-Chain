@@ -40,6 +40,8 @@ const LiveBidding = () => {
   const [participants, setParticipants] = useState<number>(0);
   const [isPlacingBid, setIsPlacingBid] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
+  const [socketError, setSocketError] = useState<string | null>(null);
+  const [reconnecting, setReconnecting] = useState(false);
   
   // Use refs to prevent stale closures and track component mount state
   const isMounted = useRef(true);
@@ -52,8 +54,13 @@ const LiveBidding = () => {
     console.log('LiveBidding: Component mounted');
     console.log('Socket URL:', getSocketUrl());
     
-    // Get the socket instance
-    const socket = getSocket();
+    // Get the socket instance or create one if it doesn't exist
+    let socket = getSocket();
+    if (!socket) {
+      console.log('LiveBidding: Socket not found, creating a new one');
+      createSocket();
+      socket = getSocket();
+    }
     
     console.log('Socket instance:', socket);
     console.log('Socket connected:', socket?.connected);
@@ -66,16 +73,53 @@ const LiveBidding = () => {
     const handleConnect = () => {
       console.log('LiveBidding: Socket connected event fired');
       setSocketConnected(true);
+      setSocketError(null);
+      setReconnecting(false);
+      
+      // Join auction room again when reconnected
+      if (id && productRef.current) {
+        socket.emit("auction:join", id, (response) => {
+          console.log("Rejoined auction room after reconnect:", response);
+        });
+      }
     };
     
-    const handleDisconnect = (reason) => {
+    const handleDisconnect = (reason: string) => {
       console.log(`LiveBidding: Socket disconnected: ${reason}`);
       setSocketConnected(false);
+      
+      // Handle various disconnect reasons
+      if (reason === 'io server disconnect') {
+        // Server disconnected us, try to reconnect manually
+        setSocketError('Server disconnected. Attempting to reconnect...');
+        setReconnecting(true);
+        socket.connect();
+      } else if (reason === 'transport close') {
+        setSocketError('Connection lost. Attempting to reconnect...');
+        setReconnecting(true);
+      } else {
+        setSocketError(`Connection error: ${reason}`);
+      }
     };
     
-    const handleConnectionError = (error) => {
+    const handleConnectionError = (error: Error) => {
       console.error('LiveBidding: Socket connection error:', error);
       setSocketConnected(false);
+      setSocketError(`Connection error: ${error.message}`);
+      setReconnecting(true);
+      
+      // Attempt to manually restore connection
+      setTimeout(() => {
+        if (isMounted.current) {
+          console.log('LiveBidding: Manually attempting to restore connection');
+          const connected = checkConnection();
+          setSocketConnected(connected);
+          if (connected) {
+            setReconnecting(false);
+            setSocketError(null);
+          }
+        }
+      }, 3000);
     };
     
     socket.on('connect', handleConnect);
@@ -84,8 +128,16 @@ const LiveBidding = () => {
     
     // Set up a periodic check for the socket connection
     const connectionCheckInterval = setInterval(() => {
-      const connected = checkConnection();
-      setSocketConnected(connected);
+      if (isMounted.current && !socketConnected) {
+        console.log('LiveBidding: Checking socket connection...');
+        const connected = checkConnection();
+        setSocketConnected(connected);
+        
+        if (connected && socketError) {
+          setSocketError(null);
+          setReconnecting(false);
+        }
+      }
     }, 5000); // Check every 5 seconds
     
     return () => {
@@ -93,8 +145,13 @@ const LiveBidding = () => {
       socket.off('disconnect', handleDisconnect);
       socket.off('connect_error', handleConnectionError);
       clearInterval(connectionCheckInterval);
+      
+      // Leave the auction room when component unmounts
+      if (socket.connected && id) {
+        socket.emit("auction:leave", id);
+      }
     };
-  }, []);
+  }, [id]);
   
   // Generate mock bid history (memoized to prevent re-creation)
   const generateMockBidHistory = useCallback((product: Product) => {
@@ -129,12 +186,12 @@ const LiveBidding = () => {
     return names[Math.floor(Math.random() * names.length)];
   }, []);
   
-  // Load product on initial render
+  // Load product on initial render - ensure this works independently
   useEffect(() => {
     isMounted.current = true;
     
     const loadProduct = async () => {
-      if (!id || hasLoaded.current) return; // Skip if we've already loaded
+      if (!id || hasLoaded.current) return;
       
       try {
         setIsLoading(true);
@@ -142,7 +199,6 @@ const LiveBidding = () => {
         
         console.log('LiveBidding: Loading product with ID:', id);
         const productData = await fetchProductById(id);
-        console.log('LiveBidding: Product data loaded:', productData);
         
         if (!isMounted.current) return;
         
@@ -159,33 +215,31 @@ const LiveBidding = () => {
         
         // Verify this is an auction product
         if (!productData.bidding) {
-          setError("This is not an auction product");
+          // If not an auction product, redirect to product page instead
           toast({
-            title: "Error",
-            description: "This is not an auction product",
+            title: "Not an auction",
+            description: "This product is not available for bidding",
             variant: "destructive",
           });
           navigate(`/product/${id}`);
           return;
         }
         
-        hasLoaded.current = true; // Mark as loaded
+        hasLoaded.current = true;
         setProduct(productData);
         productRef.current = productData;
-        
-        console.log('LiveBidding: Product set to state:', productData);
         
         // Set initial bid amount
         const minimumNextBid = (productData.currentBid || productData.startingBid || 0) + 0.5;
         setBidAmount(minimumNextBid);
         
-        // Set mock data only once
+        // Initialize bid history
         if (bidHistory.length === 0) {
+          // Either fetch actual bid history or generate mock data
           const mockBidHistory = generateMockBidHistory(productData);
           setBidHistory(mockBidHistory);
           setParticipants(Math.floor(Math.random() * 10) + 3);
         }
-        
       } catch (error) {
         console.error("Error loading product:", error);
         
@@ -212,7 +266,7 @@ const LiveBidding = () => {
         clearInterval(timerRef.current);
       }
     };
-  }, [id]); // Removed dependencies that could cause re-renders
+  }, [id, fetchProductById, navigate, toast]);
   
   // Set up socket connection for real-time updates
   useEffect(() => {
@@ -419,33 +473,46 @@ const LiveBidding = () => {
     }
   };
   
-  const handleReconnect = () => {
-    console.log('LiveBidding: Manual reconnection requested');
-    createSocket();
-    const connected = checkConnection();
-    setSocketConnected(connected);
+  // Add a manual reconnect function
+  const reconnectSocket = useCallback(() => {
+    setReconnecting(true);
+    setSocketError('Attempting to reconnect...');
     
-    if (connected && product) {
-      // Rejoin the auction room
-      getSocket().emit("auction:join", product.id, (response) => {
-        console.log("Rejoined auction room:", response);
-        // Update participant count on successful join
-        if (response && response.success) {
-          setParticipants(response.participantCount);
-          toast({
-            title: "Reconnected",
-            description: "Successfully reconnected to the auction room"
-          });
-        }
-      });
-    } else {
-      toast({
-        title: "Reconnection Failed",
-        description: "Could not reconnect to the socket server",
-        variant: "destructive"
-      });
+    // Close and recreate socket
+    const socket = getSocket();
+    if (socket) {
+      socket.close();
     }
-  };
+    
+    createSocket();
+    const newSocket = getSocket();
+    
+    // Check if reconnection was successful
+    if (newSocket && newSocket.connected) {
+      setSocketConnected(true);
+      setSocketError(null);
+      setReconnecting(false);
+      
+      // Rejoin auction room
+      if (id) {
+        newSocket.emit("auction:join", id);
+      }
+    } else {
+      // Schedule another check
+      setTimeout(() => {
+        if (isMounted.current) {
+          const connected = checkConnection();
+          setSocketConnected(connected);
+          setReconnecting(false);
+          if (connected) {
+            setSocketError(null);
+          } else {
+            setSocketError('Failed to reconnect. Please try again.');
+          }
+        }
+      }, 2000);
+    }
+  }, [id]);
   
   // Return loading state
   if (isLoading) {
@@ -474,21 +541,33 @@ const LiveBidding = () => {
   }
   
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto py-6 max-w-5xl">
+      {/* Back button */}
       <Button 
         variant="ghost" 
-        className="mb-4 flex items-center"
-        onClick={() => navigate(`/product/${product.id}`)}
+        size="sm" 
+        className="mb-4"
+        onClick={() => navigate("/marketplace")}
       >
-        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Product
+        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Marketplace
       </Button>
       
-      {!socketConnected && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-          <p className="text-yellow-800 flex items-center">
-            <AlertCircle className="h-4 w-4 mr-2" />
-            Socket connection issue. Real-time updates may not work.
-          </p>
+      {/* Socket connection status */}
+      {socketError && (
+        <div className="mb-4 p-2 bg-yellow-100 border border-yellow-400 rounded flex items-center justify-between">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-yellow-700 mr-2" />
+            <span className="text-yellow-700">{socketError}</span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={reconnectSocket}
+            disabled={reconnecting}
+          >
+            {reconnecting ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : <RefreshCw className="h-4 w-4 mr-1" />}
+            {reconnecting ? 'Reconnecting...' : 'Reconnect'}
+          </Button>
         </div>
       )}
       

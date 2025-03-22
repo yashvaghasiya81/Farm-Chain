@@ -99,8 +99,8 @@ const App = () => {
                   <Route element={<MainLayout />}>
                     <Route path="/" element={<Home />} />
                     <Route path="/marketplace" element={<Marketplace />} />
-                    <Route path="/product/:id" element={<ProductDetails />} />
                     <Route path="/live-bidding/:id" element={<LiveBidding />} />
+                    <Route path="/product/:id" element={<ProductDetails />} />
                     <Route path="/marketplace/:id" element={<Navigate to="/product/:id" replace />} />
                     <Route path="/cart" element={<CartPage />} />
                     <Route path="/terms" element={<TermsAndConditions />} />

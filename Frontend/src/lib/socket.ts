@@ -15,10 +15,21 @@ let currentAuctionId: string | null = null;
  * @returns {string} WebSocket server URL
  */
 export function getSocketUrl(): string {
-  // Use environment variable in production, fallback for development
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-  if (DEBUG_MODE) console.log(`[Socket] Using server URL: ${apiUrl}`);
-  return apiUrl;
+  // Always use port 5001 for development
+  const defaultUrl = 'http://localhost:5001';
+  
+  // Use environment variable in production, fallback to defaultUrl
+  const apiUrl = import.meta.env.VITE_API_URL || defaultUrl;
+  
+  // Ensure we're using port 5001 if it's a localhost URL
+  let finalUrl = apiUrl;
+  if (apiUrl.includes('localhost:5000')) {
+    finalUrl = apiUrl.replace('localhost:5000', 'localhost:5001');
+    console.warn('[Socket] Corrected URL from port 5000 to 5001:', finalUrl);
+  }
+  
+  if (DEBUG_MODE) console.log(`[Socket] Using server URL: ${finalUrl}`);
+  return finalUrl;
 }
 
 /**
@@ -26,9 +37,21 @@ export function getSocketUrl(): string {
  * @returns {Socket} Socket.io client instance
  */
 export function createSocket(): Socket {
+  // Close any existing connection
   if (socket) {
-    if (DEBUG_MODE) console.log('[Socket] Reusing existing socket connection');
-    return socket;
+    if (socket.io.uri.includes('localhost:5000')) {
+      console.warn('[Socket] Detected connection to port 5000, forcibly closing and reconnecting to port 5001');
+      closeSocket();
+    } else if (socket.connected) {
+      if (DEBUG_MODE) console.log('[Socket] Reusing existing connected socket');
+      return socket;
+    } else if (!socket.connected && !socket.connecting) {
+      if (DEBUG_MODE) console.log('[Socket] Socket exists but not connected or connecting, creating new connection');
+      closeSocket();
+    } else {
+      if (DEBUG_MODE) console.log('[Socket] Socket is connecting, reusing existing socket');
+      return socket;
+    }
   }
 
   const url = getSocketUrl();
@@ -55,8 +78,18 @@ export function createSocket(): Socket {
     
     // If we're on websocket and it failed, try polling
     if (socket.io.engine.transport.name === 'websocket') {
-      if (DEBUG_MODE) console.log('[Socket] WebSocket failed, trying polling transport');
+      if (DEBUG_MODE) console.log('[Socket] WebSocket failed, switching to polling transport');
+      // Force close the websocket transport
       socket.io.engine.transport.close();
+      
+      // Explicitly set transports to only use polling
+      socket.io.opts.transports = ['polling'];
+      
+      // Try to reconnect immediately
+      setTimeout(() => {
+        if (DEBUG_MODE) console.log('[Socket] Attempting reconnect with polling transport');
+        socket.connect();
+      }, 100);
     }
   });
 
@@ -250,6 +283,14 @@ export function checkConnection(): boolean {
     return socket?.connected || false;
   }
   
+  // Check if socket is connected to the wrong port
+  if (socket.io.uri.includes('localhost:5000')) {
+    console.warn('[Socket] Connection to wrong port detected, recreating socket');
+    closeSocket();
+    createSocket();
+    return socket?.connected || false;
+  }
+  
   // If socket exists but is not connected, try reconnecting
   if (!socket.connected) {
     if (DEBUG_MODE) console.log('[Socket] Socket exists but not connected, attempting to connect');
@@ -261,10 +302,21 @@ export function checkConnection(): boolean {
     }
     
     // Check if we've exceeded maximum reconnection attempts
-    if (socket.io.reconnectionAttempts && socket.io.reconnectionAttempts > 3) {
-      if (DEBUG_MODE) console.log('[Socket] Too many reconnection attempts, creating new socket');
+    if (socket.io._reconnectionAttempts > 3) {
+      if (DEBUG_MODE) console.log('[Socket] Too many reconnection attempts, creating new socket with polling transport');
       closeSocket(); // Close the current socket
-      createSocket(); // Create a new one
+      
+      // Create a new socket with polling transport only
+      const url = getSocketUrl();
+      socket = io(url, {
+        transports: ['polling'],
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1000,
+        timeout: 30000,
+        forceNew: true
+      });
+      
       return socket?.connected || false;
     }
     
