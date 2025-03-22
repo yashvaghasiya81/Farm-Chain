@@ -16,7 +16,7 @@ let currentAuctionId: string | null = null;
  */
 export function getSocketUrl(): string {
   // Use environment variable in production, fallback for development
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
   if (DEBUG_MODE) console.log(`[Socket] Using server URL: ${apiUrl}`);
   return apiUrl;
 }
@@ -36,11 +36,12 @@ export function createSocket(): Socket {
 
   // Create socket instance with reconnection enabled
   socket = io(url, {
-    transports: ['websocket', 'polling'],
+    transports: ['websocket', 'polling'], // Try websocket first, fall back to polling
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
-    timeout: 20000
+    timeout: 20000,
+    forceNew: true // Force a new connection
   });
 
   // Connection event handlers
@@ -51,6 +52,12 @@ export function createSocket(): Socket {
   socket.on('connect_error', (error) => {
     console.error(`[Socket] Connection error: ${error.message}`);
     console.log(`[Socket] Connection details: URL=${url}, Transport=${socket.io.engine.transport.name}`);
+    
+    // If we're on websocket and it failed, try polling
+    if (socket.io.engine.transport.name === 'websocket') {
+      if (DEBUG_MODE) console.log('[Socket] WebSocket failed, trying polling transport');
+      socket.io.engine.transport.close();
+    }
   });
 
   socket.on('disconnect', (reason) => {
@@ -253,6 +260,14 @@ export function checkConnection(): boolean {
       return false;
     }
     
+    // Check if we've exceeded maximum reconnection attempts
+    if (socket.io.reconnectionAttempts && socket.io.reconnectionAttempts > 3) {
+      if (DEBUG_MODE) console.log('[Socket] Too many reconnection attempts, creating new socket');
+      closeSocket(); // Close the current socket
+      createSocket(); // Create a new one
+      return socket?.connected || false;
+    }
+    
     // Force reconnection
     try {
       if (DEBUG_MODE) console.log('[Socket] Forcing socket to reconnect');
@@ -260,7 +275,12 @@ export function checkConnection(): boolean {
       return socket.connected;
     } catch (error) {
       console.error('[Socket] Error while reconnecting:', error);
-      return false;
+      
+      // If reconnection fails, try creating a new socket
+      if (DEBUG_MODE) console.log('[Socket] Reconnection failed, creating new socket');
+      closeSocket();
+      createSocket();
+      return socket?.connected || false;
     }
   }
   
