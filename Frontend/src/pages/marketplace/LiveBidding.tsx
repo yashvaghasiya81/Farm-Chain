@@ -519,4 +519,32 @@ const LiveBidding = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4 max-h-[400px] overflow-y-auto">
-                {bidHistory.le
+                {bidHistory.length > 0 ? (
+                  bidHistory.map((bid, index) => (
+                    <div key={index} className="flex justify-between items-center p-3 rounded-md bg-gray-50">
+                      <div>
+                        <p className="font-medium">{bid.bidder}</p>
+                        <p className="text-sm text-gray-500">
+                          {new Date(bid.timestamp).toLocaleString()}
+                        </p>
+                      </div>
+                      <Badge className={index === 0 ? "bg-farm-green-600" : "bg-gray-600"}>
+                        ${bid.amount.toFixed(2)}
+                      </Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No bids placed yet. Be the first to bid!</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LiveBidding; 
