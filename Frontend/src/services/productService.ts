@@ -181,13 +181,11 @@ export const productService = {
     return filteredProducts;
   },
   
-  getProductById: async (id: string): Promise<Product> => {
-    // Simulate API delay
-    await delay(500);
-    
+  getProductById: async (id: string): Promise<Product | null> => {
+    // Remove artificial delay to fix loading issues
     const product = mockProducts.find(p => p.id === id);
     if (!product) {
-      throw new Error("Product not found");
+      return null;
     }
     
     return product;

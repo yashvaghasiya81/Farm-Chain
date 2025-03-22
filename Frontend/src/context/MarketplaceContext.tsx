@@ -114,6 +114,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     setError(null);
     try {
       const product = await productService.getProductById(id);
+      if (!product) {
+        setError("Product not found");
+        return null;
+      }
       return product;
     } catch (error) {
       console.error("Error fetching product:", error);

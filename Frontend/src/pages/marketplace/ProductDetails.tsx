@@ -27,30 +27,42 @@ const ProductDetails = () => {
   const [quantity, setQuantity] = useState(1);
   const [bidAmount, setBidAmount] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const loadProduct = async () => {
       if (id) {
         try {
+          setError(null);
           const productData = await fetchProductById(id);
           if (productData) {
             setProduct(productData);
             if (productData.bidding && productData.currentBid) {
-              setBidAmount(productData.currentBid + 0.5); // Default bid slightly higher
+              setBidAmount(productData.currentBid + 0.5);
             }
+          } else {
+            setError("Product not found");
+            toast({
+              title: "Error",
+              description: "Product not found",
+              variant: "destructive",
+            });
+            navigate("/marketplace");
           }
         } catch (error) {
+          setError("Failed to load product details");
           toast({
             title: "Error",
             description: "Failed to load product details",
             variant: "destructive",
           });
+          navigate("/marketplace");
         }
       }
     };
     
     loadProduct();
-  }, [id, fetchProductById, toast]);
+  }, [id, fetchProductById, toast, navigate]);
   
   // Update time left for auction
   useEffect(() => {
@@ -131,10 +143,26 @@ const ProductDetails = () => {
     }
   };
   
-  if (isLoading || !product) {
+  if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-16 flex justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-farm-green-600"></div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-farm-green-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Oops! Something went wrong</h2>
+          <p className="text-gray-600 mb-6">{error || "Product not found"}</p>
+          <Button onClick={() => navigate("/marketplace")}>
+            Return to Marketplace
+          </Button>
+        </div>
       </div>
     );
   }
