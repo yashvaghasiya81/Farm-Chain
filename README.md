@@ -1,110 +1,172 @@
-# Socket.io Testing Tools
+# Farm Chain
 
-A collection of tools for testing Socket.io connections and real-time functionality.
+A comprehensive agricultural platform that connects farmers and users through a modern marketplace with real-time bidding capabilities.
 
-## Overview
+## 🚀 Features
 
-This package provides several tools to help test and debug Socket.io connections:
+### Core Features
+- Real-time communication using Socket.io
+- Modern React-based frontend with TypeScript
+- Node.js backend with Express
+- Tailwind CSS for responsive design
+- WebSocket support for live updates
 
-1. **Socket Test Server** - A standalone Socket.io server with extensive logging and room support
-2. **Command-line Test Client** - A Node.js CLI client for connecting to Socket.io servers
-3. **Browser Test Client** - An HTML/JS client for browser-based testing
+### Platform Features
 
-## Installation
+## 🚀 Key Features
 
+### Farmer Features
+- Profile & Product Management
+- Inventory Tracking
+- Bidding Management
+- Sales Analytics
+
+### User Features
+- Product Browsing & Search
+- Real-time Bidding
+- Order Tracking
+- Secure Payments
+
+### Marketplace
+- Live Auctions
+- Product Categories
+- Price Tracking
+- Quality Assurance
+
+## 📋 Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn package manager
+- Git
+
+## 🛠️ Installation
+
+1. Clone the repository:
 ```bash
-# Clone the repository
-git clone <repository-url>
+git clone <your-repository-url>
+cd Farm-Chain
+```
 
-# Install dependencies
+2. Install dependencies for both frontend and backend:
+```bash
+# Install backend dependencies
+cd Backend
+npm install
+
+# Install frontend dependencies
+cd ../Frontend
 npm install
 ```
 
-## Usage
+## 🔧 Configuration
 
-### Starting the Test Server
+1. Backend Configuration:
+   - Navigate to the `Backend` directory
+   - Create a `.env` file with necessary environment variables:
+     ```
+     PORT=5000
+     MONGODB_URI=your_mongodb_uri
+     JWT_SECRET=your_jwt_secret
+     SOCKET_PORT=5001
+     ```
 
+2. Frontend Configuration:
+   - Navigate to the `Frontend` directory
+   - Create a `.env` file with necessary environment variables:
+     ```
+     VITE_API_URL=http://localhost:5000
+     VITE_SOCKET_URL=http://localhost:5001
+     ```
+
+## 🚀 Running the Application
+
+1. Start the Backend Server:
 ```bash
-npm run start:server
+cd Backend
+npm start
 ```
 
-This will start a Socket.io server on port 5001 with the following features:
-- Connection tracking
-- Room management
-- Detailed logging
-- HTTP endpoints for server status
-
-#### Server Endpoints
-
-- `http://localhost:5001/` - Server status
-- `http://localhost:5001/stats` - Detailed server statistics
-
-### Using the Command-line Client
-
+2. Start the Frontend Development Server:
 ```bash
-npm run start:client
+cd Frontend
+npm run dev
 ```
 
-The CLI client provides an interactive interface with commands like:
-- `connect [url]` - Connect to a Socket.io server
-- `send <message>` - Send a test message
-- `status` - Check connection status
-- `help` - View all available commands
+The application will be available at:
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:5000`
+- WebSocket Server: `http://localhost:5001`
 
-### Using the Browser Client
+## 📁 Project Structure
 
-Open `Frontend/src/pages/socketTest.html` in your web browser.
-
-The browser client provides:
-- Connection status monitoring
-- Test message sending
-- Event logging
-
-## Supported Events
-
-### Server Events
-
-- `connection` - When a client connects
-- `disconnect` - When a client disconnects
-- `testMessage` - When a client sends a test message
-- `joinRoom` - When a client joins a room
-- `roomMessage` - When a client sends a message to a room
-
-### Client Events
-
-- `testResponse` - Response to a test message
-- `serverBroadcast` - Broadcast from the server
-- `roomUpdate` - Room participant updates
-- `roomMessage` - Message received in a room
-
-## Examples
-
-### Joining a room
-
-```javascript
-// From the CLI client
-socket-test> connect
-socket-test> send {"action":"joinRoom","roomId":"test-room"}
-
-// From code
-socket.emit('joinRoom', 'test-room', (response) => {
-  console.log('Join response:', response);
-});
+```
+Farm-Chain/
+├── Backend/
+│   ├── routes/         # API routes
+│   │   ├── auth.js     # Authentication routes
+│   │   ├── products.js # Product management
+│   │   ├── bids.js     # Bidding system
+│   │   └── users.js    # User management
+│   ├── utils/          # Utility functions
+│   ├── socket/         # WebSocket handlers
+│   └── node_modules/
+├── Frontend/
+│   ├── src/
+│   │   ├── components/ # Reusable components
+│   │   ├── pages/      # Page components
+│   │   │   ├── Farmer/ # Farmer dashboard
+│   │   │   ├── User/   # User dashboard
+│   │   │   └── Market/ # Marketplace
+│   │   ├── services/   # API services
+│   │   └── utils/      # Utility functions
+│   ├── public/         # Static assets
+│   └── node_modules/
+└── README.md
 ```
 
-### Sending a room message
+## 🛠️ Tech Stack
 
-```javascript
-// From the CLI client
-socket-test> send {"action":"roomMessage","roomId":"test-room","message":"Hello room!"}
+### Frontend
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- Socket.io Client
+- Redux Toolkit (State Management)
+- React Query (Data Fetching)
 
-// From code
-socket.emit('roomMessage', {
-  roomId: 'test-room',
-  message: 'Hello room!'
-});
-```
+### Backend
+- Node.js
+- Express
+- Socket.io
+- TypeScript
+- MongoDB (Database)
+- JWT (Authentication)
+- Redis (Caching)
 
-## License
+## 🤝 Contributing
 
-MIT 
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📞 Support
+
+For support, please open an issue in the GitHub repository or contact the maintainers.
+
+## 🙏 Acknowledgments
+
+### Project Contributors
+- **Yash Vaghasiya** 
+- **Milan Baladaniya** 
+- **Meet Vaghasiya** 
+
+### Special Thanks
+- Thanks to all contributors who have helped shape this project
+- Special thanks to the open-source community for their invaluable tools and libraries 
